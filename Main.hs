@@ -17,8 +17,8 @@ import Wpub.WikipediaToHTML
 blaze = html . BR.renderHtml
 
 main = do
---  port <- liftM read $ getEnv "PORT"     
-  scotty 3000 $ do    
+  port <- liftM read $ getEnv "PORT"     
+  scotty port $ do    
     middleware $ staticPolicy (noDots >-> addBase "public")
 
     get "/wikipedia" $ do
