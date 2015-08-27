@@ -13,6 +13,7 @@ import Control.Monad.IO.Class
 import Text.XML.HXT.Core hiding ( xshow )
 
 import Wpub.WikipediaToHTML
+import QNDA.WriteEPUB
 
 blaze = html . BR.renderHtml
 
@@ -37,7 +38,8 @@ main = do
       let titles = map TL.strip $ TL.lines parameter
       liftIO $ mapM (wikiToHtml . TL.unpack) titles
       liftIO $ mkbookhtml titles
-    
+      liftIO $ writeEPUB htmldir "book.html" "wikibook.epub"
+ 
       let pagenames = map (("temp/" `TL.append` ) . (`TL.append` ".html")) (titles)
       redirect $ head pagenames
 
