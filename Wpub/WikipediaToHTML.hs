@@ -1,6 +1,6 @@
 {-# LANGUAGE Arrows, FlexibleContexts #-}
 
-module Wpub.WikipediaToHTML (wikiToHtml) where
+module Wpub.WikipediaToHTML (wikiToHtml, htmldir) where
 
 import Text.XML.HXT.Core hiding ( xshow )
 import Text.XML.HXT.Curl
@@ -25,7 +25,6 @@ wikiToHtml :: String -> IO ()
 wikiToHtml s = do
   let url = "https://en.wikipedia.org/w/index.php?title=Special:Export&pages="++s++"&offset=1&limit=1&action=submit"
   
-  removeDirectoryRecursive htmldir `E.catch` ignore
   createDirectoryIfMissing True (htmldir++"images")
   putStrLn url
   runX (  
