@@ -17,7 +17,9 @@ import Wpub.WikipediaToHTML
 blaze = html . BR.renderHtml
 
 main = do
-  port <- liftM read $ getEnv "PORT"     
+--  removeDirectoryRecursive htmldir `E.catch` ignore
+  let port= 3000
+  --  port <- liftM read $ getEnv "PORT"     
   scotty port $ do    
     middleware $ staticPolicy (noDots >-> addBase "public")
 
@@ -43,6 +45,8 @@ mkbookhtml titles =
   runX (replaceChildren 
         (eelem "book" 
          += (eelem "bookinfo"
+             += (eelem "isbn" += (txt "none"))
+             += (eelem "copyright" += (txt "Wikipedia"))
              += (eelem "authors" 
                  += (eelem "name"
                      += attr "role" (txt "author")
@@ -50,8 +54,9 @@ mkbookhtml titles =
              += (eelem "booktitle"
                  += (txt "My Selected Wikipedia"))
             )
-         += (eelem "fromtmatter")
+         += (eelem "frontmatter")
+         += (eelem "mainmatter")
          += (catA (map (\t -> eelem "include" += txt (TL.unpack t)) titles)))
         >>>
-        writeDocument [withOutputHTML] "temp/book.html")
+        writeDocument [withOutputHTML] (htmldir++"book.html"))
   
