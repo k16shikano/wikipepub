@@ -11,6 +11,7 @@ import Text.XML.HXT.Core hiding ( xshow, when )
 import Text.XML.HXT.Curl
 
 import System.IO (hPutStr, stderr)
+import qualified System.FilePath.Posix as FP
 import qualified Control.Exception as E
 import System.IO.Error 
 import Control.Monad
@@ -30,7 +31,13 @@ getImageURL path = do
   target <- runX (readDocument [withCurl [], withValidate no] path 
                   >>> deepest (hasAttrValue "class" (=="fullImageLink")
                                /> hasName "a" >>> getAttrValue "href"))
-  return $ "https:"++(head target)
+  let fn  = FP.takeFileName (head target)
+      commons = take 4 $ FP.splitPath $ head target
+      rest    = drop 4 $ FP.splitPath $ head target
+      thumb   = commons ++ ["thumb/"] ++ rest 
+      resized = (join thumb) ++ "/300px-" ++ fn
+      
+  return $ "https:"++resized -- (head target)
 
 dlImageIfNotExist :: String -> String -> IO ()
 dlImageIfNotExist path filename = 
