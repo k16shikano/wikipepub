@@ -1,4 +1,4 @@
-{-# LANGUAGE Arrows, FlexibleContexts #-}
+﻿{-# LANGUAGE Arrows, FlexibleContexts #-}
 
 module QNDA.HtmlReader (readHtml, getTextFromNode) where
  
@@ -7,6 +7,7 @@ import Data.Hashable ( hash )
 import qualified Data.String.Utils as String (split)
 
 import qualified Data.Map as Map
+import Data.List (isPrefixOf)
 
 import qualified Data.ByteString.Lazy as B
 import Data.ByteString.Lazy.UTF8 ( fromString )
@@ -14,6 +15,9 @@ import Data.ByteString.Lazy.UTF8 ( fromString )
 import QNDA.MathReader
 import QNDA.ImageReader
 import QNDA.Counter
+
+import qualified Text.ParserCombinators.Parsec as Parsec hiding (many, (<|>))
+import Control.Applicative ( (<$>), (<$) )
 
 --import qualified Debug.Trace as DT (trace)
 
@@ -37,6 +41,7 @@ readHtml filename labels mathSnipets label n t = do
       readDocument [withIndent yes
                    ,withRemoveWS no
                    ,withValidate no
+                   ,withCanonicalize no
                    ] filename
       >>>
       processBottomUp (
@@ -78,7 +83,7 @@ readHtml filename labels mathSnipets label n t = do
         
         
         -- Block elements
-        (eelem "div" 
+        (eelem "p" 
          += sattr "class" "para" 
          += (this >>> getChildren)
          <+>
@@ -278,7 +283,7 @@ genChapSecSubsec n t label =
        ((eelem "h1"
          += (putLabel . ("h1"++) $< (this >>> getTextFromNode label))
          += (ifA (hasAttr "nonum")
-             (getChildren)
+             (none)
              (case t of 
                 "chapter" -> (txt . (\c -> "Chapter "++(getChapter c)++"：")) $< nextChapter
                 "appendix" -> (txt . (\c -> "Appendix "++(getAppendix c)++"：")) $< nextChapter

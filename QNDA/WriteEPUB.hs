@@ -1,4 +1,4 @@
-{-# LANGUAGE Arrows, FlexibleContexts, OverloadedStrings #-}
+﻿{-# LANGUAGE Arrows, FlexibleContexts, OverloadedStrings #-}
 
 module QNDA.WriteEPUB where
 
@@ -14,7 +14,6 @@ import Data.Hashable (hash)
 import Control.Monad as M hiding (when)
 
 import System.Environment (getArgs)
-import qualified System.FilePath.Posix as FP
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import qualified Control.Exception as E
 import System.IO.Error 
@@ -22,11 +21,11 @@ import System.IO.Error
 import qualified Codec.Archive.Zip as ZIP
 
 import QNDA.HtmlReader (readHtml, getTextFromNode)
-import QNDA.MathReader (mathElemToResourceName, genImageFromEqString)
+import QNDA.MathReader (mathElemToResourceName, genImageFromEqString, hasMathElem)
 import QNDA.ImageReader (imagePathToResourceName)
 import QNDA.MetaInformation (mkCoverpage, genOkuzuke, getMetaInfo, mkOpf, mkContainer, getIsbn)
 import QNDA.Counter (readLabelInfo)
-import QNDA.Toc (mkTocpage, mkNcx)
+import QNDA.Toc (mkTocpage, mkNcx, mkHeaderCnt)
 
 import qualified Debug.Trace as DT (trace)
 
@@ -41,9 +40,9 @@ writeEPUB htmldir main out = do
   let cssdir = "public/css"
   let coverimg = "public/cover.jpg"
   let coverfilename = "titlepage.xhtml"
-  let tocpagefile = htmldir++"toc.xhtml"
+  let tocpagefile = "toc.xhtml"
   let okuzukepagefile = htmldir++"okuzuke.xhtml"
-  let ncxfile = htmldir++"toc.ncx"
+  let ncxfile = "toc.ncx"
   let auxfile = "book.aux" -- if you will
   let fontsdir = "public/fonts"
   let outputFileName = out
@@ -89,7 +88,7 @@ writeEPUB htmldir main out = do
                             >>>
                             multi (ifA (hasName "ref" <+> hasName "pref" <+> hasName "pageref")
                                    (constA "")
-                                   (getAttrValue "label")))
+                                   (getAttrValue "label" <+> getAttrValue "name")))
              return $ map (flip (,) s) $ filter (/="") links
          ) htmlFilenames
   let internalLinkLabels = Map.fromList $ concat labelsAndFiles
@@ -99,6 +98,8 @@ writeEPUB htmldir main out = do
   let mathSnipets = Map.fromList $ concat maths
   let mathimages = map fst $ concat maths
   mathImageEntries <- mapM (ZIP.readEntry []) mathimages
+  hasmath <- mapM hasMathElem htmlFilenames
+  let htmlsWithSVG = concat hasmath
 
   labelmap <- readLabelInfo htmlFiles
   htmlData <- mapM (\(n,t,f) -> readHtml f internalLinkLabels mathSnipets labelmap n t) htmlFiles
@@ -108,22 +109,23 @@ writeEPUB htmldir main out = do
   imageEntries <- mapM (ZIP.readEntry []) images
   
   metadata <- getMetaInfo book
-  opf <- mkOpf metadata htmlFiles images mathimages (coverimg, coverfilename) tocpagefile okuzukepagefile ncxfile cssfiles
+  opf <- mkOpf metadata htmlFiles htmlsWithSVG images mathimages (coverimg, coverfilename) tocpagefile okuzukepagefile ncxfile cssfiles
   let opfEntry = mkEntry "content.opf" $ fromString . xshow $ opf
 
   putStrLn $ show htmlFiles
   
   -- extract all the header elements to generate toc and ncx
   headers <- 
-    mapM (\f -> do
+    mapM (\(n,t,f) -> do
              runX (readDocument [withValidate no] f 
                    >>> 
                    (multi
-                    (ifA ((hasName "h1" <+> hasName "h2" <+> hasName "appendix")) 
+                    (ifA (hasName "h1" <+> hasName "h2" <+> hasName "appendix")
                      (this) (none))
                     >>>
-                    ((getName) &&& (getTextFromNode labelmap) &&& constA (FP.takeFileName f))))
-         ) htmlFilenames
+                    ((getName) &&& (getTextFromNode labelmap) &&& constA f &&& 
+                     (ifA (hasAttrValue "nonum" (=="yes")) (constA $ mkHeaderCnt "other" n) (constA $ mkHeaderCnt t n)))))
+         ) htmlFiles 
 
   ncx <- mkNcx (concat isbn) (concat headers)
   let ncxEntry = mkEntry ncxfile $ fromString . xshow $ ncx

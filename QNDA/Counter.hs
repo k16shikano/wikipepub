@@ -1,4 +1,4 @@
-{-# LANGUAGE Arrows, FlexibleContexts #-}
+﻿{-# LANGUAGE Arrows, FlexibleContexts #-}
 
 module QNDA.Counter where
 
@@ -23,7 +23,7 @@ getChapter (n,_,_,_,_,_) = show n
 
 nextChapter :: SLA CounterState b CounterState
 nextChapter = nextState update
-    where update (n,_,_,_,_,_) = (n+1,0,0,0,0,0)
+    where update (n,_,_,_,_,_) = (n,0,0,0,0,0)
 
 getAppendix :: CounterState -> String
 getAppendix (n,_,_,_,_,_) = [chr (64+n)]

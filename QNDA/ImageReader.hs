@@ -1,4 +1,4 @@
-{-# LANGUAGE Arrows, FlexibleContexts #-}
+﻿{-# LANGUAGE Arrows, FlexibleContexts #-}
 
 module QNDA.ImageReader where
  
@@ -12,7 +12,7 @@ import Network.HTTP.Base (urlEncode)
 import qualified Control.Exception as E
 import System.IO.Error 
 
-import qualified Debug.Trace as DT (trace)
+-- import qualified Debug.Trace as DT (trace)
 
 voidimg = "public/void.jpg"
 
@@ -59,17 +59,18 @@ imgElem f =
    fromSLA 0 (
      processBottomUp (
         (((\(alt,path) -> 
-            eelem "img" 
-            += sattr "src" path 
-            += sattr "alt" alt
-            += sattr "class" "figure")
+            (eelem "img"
+             += sattr "src" path 
+             += sattr "alt" alt
+             += sattr "class" "figure" 
+             += (sattr "style" $< styleAttr)))
           $<
           (getAttrValue "src" &&& nextState (+1) >>> arr (mkImgId f) >>> (this &&& arr mkImgSrcPath)))
-         >>> styleAttr)
+        )
         `when` 
         (hasName "img" >>> neg (hasAttrValue "class" (=="inlinemath") <+> hasAttrValue "class" (=="displaymath")))))
 
-styleAttr :: (ArrowXml a) => a XmlTree XmlTree
+styleAttr :: (ArrowXml a) => a XmlTree String
 styleAttr = 
   ((\(h,w) -> (case (h,w) of
                   ("","") -> addAttr "style" "width:90%;"
@@ -77,5 +78,5 @@ styleAttr =
                   (h,"")  -> addAttr "style" $ "height:"++h++";"
                   (h,w)   -> addAttr "style" $ "width:"++w++";height:"++h++";"))
    $<$ ((getAttrValue "height") &&& (getAttrValue "width")))
-  >>> removeAttr "height" >>> removeAttr "width" >>> removeAttr "abovespace"
+  >>> getAttrValue "style"
 

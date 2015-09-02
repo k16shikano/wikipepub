@@ -1,4 +1,4 @@
-{-# LANGUAGE Arrows, FlexibleContexts #-}
+﻿{-# LANGUAGE Arrows, FlexibleContexts #-}
 
 module QNDA.MathReader where
  
@@ -33,6 +33,13 @@ mathElemToResourceName f = do
                    , this :-> none
                    ]))))
 
+hasMathElem f = do
+  runX (
+    readDocument [withValidate no] f
+    >>>
+    (ifA (multi (hasName "math" <+> hasName "equation" <+> hasName "eq")) (constA f) (constA ""))
+    )
+
 mkImagePath filename seq = FP.combine "images" $ (FP.dropExtension filename ++ show seq FP.<.> "svg")
 
 latexTemplate body = "\\documentclass[landscape]{jsbook}\n"
@@ -44,7 +51,7 @@ latexTemplate body = "\\documentclass[landscape]{jsbook}\n"
 
 genImageFromEqString imagepath equation = do
   IO.writeFile "temp" (latexTemplate equation)
-  Cmd.system $ "scripts/mkMathImg.sh " ++ imagepath
+  Cmd.system $ "./mkMathImg.sh " ++ imagepath
 
 mathElem :: (ArrowXml a, ArrowIO a) => FilePath -> a XmlTree XmlTree
 mathElem filename =

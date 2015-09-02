@@ -36,9 +36,10 @@ main = do
     post "/wikipedia" $ do
       parameter <- param "titles"
       let titles = map TL.strip $ TL.lines parameter
-      liftIO $ mapM (wikiToHtml . TL.unpack) titles
-      liftIO $ mkbookhtml titles
-      liftIO $ writeEPUB htmldir "book.html" "wikibook.epub"
+      liftIO $ do {mapM (wikiToHtml . TL.unpack) titles;
+                   mkbookhtml titles;
+                   writeEPUB htmldir "book.html" "wikibook.epub";
+                   }
  
       let pagenames = map (("temp/" `TL.append` ) . (`TL.append` ".html")) (titles)
       redirect $ head pagenames

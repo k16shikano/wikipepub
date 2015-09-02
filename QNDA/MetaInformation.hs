@@ -1,4 +1,4 @@
-{-# LANGUAGE Arrows, FlexibleContexts #-}
+﻿{-# LANGUAGE Arrows, FlexibleContexts #-}
 
 module QNDA.MetaInformation where
 
@@ -7,6 +7,8 @@ import Text.XML.HXT.Core hiding (xshow)
 import Data.Time.Clock (getCurrentTime)
 import System.Locale (defaultTimeLocale)
 import Data.Time.Format (formatTime)
+import qualified Data.Char as C (toLower)
+import qualified System.FilePath.Posix as FP
 
 --import qualified Debug.Trace as DT (trace)
 
@@ -30,8 +32,6 @@ genOkuzuke book = do
         &&& (multi $ hasName "copyright" >>> getAttrValue "year")
         &&& (constA "")
         &&& (constA "")
---        &&& (listA (multi $ hasName "printing") >>> arr reverse >>> arr head >>> getAttrValue "date")
---        &&& (listA (multi $ hasName "printing") >>> arr reverse >>> arr head /> getText)
        )
        &&& listA (multi $ hasName "authors" /> hasName "name" >>> this &&& getAttrValue "role" >>> arr authorRole)))
      (none))))
@@ -105,7 +105,7 @@ getMetaInfo book = do
     arr last -- there may be several dates
     )
 
-mkOpf metadata htmls images mathimages (coverimg, coverfilename) tocpagefile okuzukepagefile ncxfile cssfiles = runX (
+mkOpf metadata htmls htmlswithmath images mathimages (coverimg, coverfilename) tocpagefile okuzukepagefile ncxfile cssfiles = runX (
   eelem "package"
   += sattr "xmlns" "http://www.idpf.org/2007/opf"
   += sattr "unique-identifier" "BookId"
@@ -134,7 +134,7 @@ mkOpf metadata htmls images mathimages (coverimg, coverfilename) tocpagefile oku
           += sattr "id" "okuzuke"
           += sattr "href" okuzukepagefile
           += sattr "media-type" "application/xhtml+xml")
-      += (mkOpfHtmls htmls)
+      += (mkOpfHtmls htmls htmlswithmath)
       += (mkOpfImages images)
       += (mkOpfMathImages mathimages)
       += (eelem "item"
@@ -208,21 +208,22 @@ mkOpfMetaData (title, (isbn, (rights, date))) authors =
                                       += (sattr "refines" ("#creator"++(show id)))
                                       += (sattr "property" "role")
                                       += (sattr "scheme" "marc:relators")
-                                      += (sattr "id" "role")
+                                      += (sattr "id" ("role"++(show id)))
                                       += (txt role)))
            (zip authors [1..]))
   += (eelem "meta"
       += sattr "name" "cover"
       += sattr "content" "coverId")
 
-mkOpfHtmls :: (ArrowXml a) => [(Int, String, String)] -> a XmlTree XmlTree
-mkOpfHtmls htmls = catA $ 
-                   map (\(n,t,f) -> eelem "item"
-                                    += sattr "id" (t++(show n))
-                                    += sattr "href" f
-                                    += sattr "properties" "svg" -- FIXME
-                                    += sattr "media-type" "application/xhtml+xml") $
-                   htmls
+mkOpfHtmls :: (ArrowXml a) => [(Int, String, String)] -> [String] -> a XmlTree XmlTree
+mkOpfHtmls htmls htmlswithsvg = 
+  catA $ 
+  map (\(n,t,f) -> eelem "item"
+                   += sattr "id" (t++(show n))
+                   += sattr "href" f
+                   += (if (f `elem` htmlswithsvg) then (sattr "properties" "svg") else (none))
+                   += sattr "media-type" "application/xhtml+xml") $
+  htmls
 
 mkOpfCss :: (ArrowXml a) => [String] -> a XmlTree XmlTree
 mkOpfCss cssfiles = catA $
@@ -235,11 +236,14 @@ mkOpfCss cssfiles = catA $
 
 mkOpfImages :: (ArrowXml a) => [String] -> a XmlTree XmlTree
 mkOpfImages images = catA $
-                     map (\(s,n) -> eelem "item"
+                     map (\(s,mt,n) -> eelem "item"
                                     += sattr "id" ("img"++(show n))
                                     += sattr "href" s
-                                    += sattr "media-type" "image/png") $
-                     (zip images [1..])
+                                    += sattr "media-type" mt) $
+                     (zip3 images (mediaTypes images) [1..])
+
+mediaTypes :: [String] -> [String]
+mediaTypes images = map (\f -> ("image/"++(map C.toLower (tail (FP.takeExtension f))))) images
 
 mkOpfMathImages :: (ArrowXml a) => [String] -> a XmlTree XmlTree
 mkOpfMathImages images = catA $
