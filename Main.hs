@@ -42,7 +42,9 @@ main = do
                    }
  
       let pagenames = map (("temp/" `TL.append` ) . (`TL.append` ".html")) (titles)
-      redirect $ head pagenames
+      
+      setHeader "Content-Type" "application/epub+zip"
+      file "wikibook.epub"
 
 mkbookhtml titles =
   runX (replaceChildren 
