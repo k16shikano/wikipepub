@@ -359,7 +359,7 @@ image = do
       rest = dropWhile (\c -> (isFormat c) || (isResizing c)) options
       caption = if rest==[] then "" else head rest
   
-  let name = join "_" $ words $ concatText $ head s
+  let name = ("File:"++) $ urlEncode $ join "_" $ words $ concatText $ head s
       thumb = "thumb" `elem` format || "thumbnail" `elem` format
       widthattr = case resizing of
         [] -> if thumb then mkattr "width" "222px" else mkattr "" []

@@ -8,6 +8,7 @@ import System.Directory (copyFile, doesFileExist, getCurrentDirectory)
 import qualified System.FilePath.Posix as FP
 import qualified System.Process as Prc (readProcess)
 
+import Network.HTTP.Base (urlEncode)
 import qualified Control.Exception as E
 import System.IO.Error 
 
@@ -48,7 +49,7 @@ ignore :: E.SomeException -> IO ()
 ignore _ = return ()
 
 mkImgId :: FilePath  -> (FilePath, Int) -> String
-mkImgId f (s,c) = FP.takeBaseName f ++ FP.takeBaseName s ++ show c ++ FP.takeExtension s
+mkImgId f (s,c) = FP.takeBaseName f ++ (urlEncode  $ FP.takeBaseName s) ++ show c ++ FP.takeExtension s
 
 mkImgSrcPath :: String -> FilePath 
 mkImgSrcPath imgid = FP.combine "images" $ imgid
