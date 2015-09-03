@@ -38,6 +38,7 @@ executable wikipepub
                      , scotty >= 0.10.2
                      , text
                      , blaze-html
+                     , blaze-markup
                      , wai-middleware-static
                      , time
   hs-source-dirs:      .
