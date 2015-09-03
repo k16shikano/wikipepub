@@ -17,6 +17,8 @@ import System.IO.Error
 import Control.Monad
 import Control.Monad.IO.Class
 
+import qualified Debug.Trace as DT (trace)
+
 imagedir = "public/temp/images/"
 
 getCommonsImage :: String -> String -> IO ()
@@ -28,16 +30,25 @@ getCommonsImage url name = do
  
 getImageURL :: String -> IO String
 getImageURL path = do
-  target <- runX (readDocument [withCurl [], withValidate no] path 
-                  >>> deepest (hasAttrValue "class" (=="fullImageLink")
-                               /> hasName "a" >>> getAttrValue "href"))
-  let fn  = FP.takeFileName (head target)
-      commons = take 4 $ FP.splitPath $ head target
-      rest    = drop 4 $ FP.splitPath $ head target
+  nandw <- runX (readDocument [withCurl [], withValidate no] (DT.trace path path) 
+                 >>> deepest (hasAttrValue "class" (=="fullImageLink")
+                              /> hasName "a"
+                              >>> (getAttrValue "href" &&& 
+                                   (this /> hasName "img" >>> getAttrValue "data-file-width"))))
+  let original = if [] == nandw then "" else fst $ head nandw
+      width    = if [] == nandw then "" else snd $ head nandw
+  
+  let fn  = FP.takeFileName original
+      commons = take 4 $ FP.splitPath original
+      rest    = drop 4 $ FP.splitPath original
       thumb   = commons ++ ["thumb/"] ++ rest 
-      resized = (join thumb) ++ "/300px-" ++ fn
-      
-  return $ "https:"++resized -- (head target)
+      resized = (join thumb) ++ "/300px-" ++ fn      
+      extns   = FP.takeExtension original
+      target  = if extns == ".svg" then original
+                else if (read width :: Int) < 300 then original 
+                     else resized
+  
+  return $ "https:"++target
 
 dlImageIfNotExist :: String -> String -> IO ()
 dlImageIfNotExist path filename = 
