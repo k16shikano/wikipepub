@@ -10,15 +10,15 @@ maintainer:          k16.shikano@gmail.com
 category:            Web
 build-type:          Simple
 -- extra-source-files:  
-cabal-version:       >=1.20
+cabal-version:       >=1.16
 
 executable wikipepub
   main-is:             Main.hs
   other-extensions:    FlexibleContexts
                      , OverloadedStrings
                      , Arrows
-  build-depends:       base >=4.7 && <4.8
-                     , parsec >= 3.1.9
+  build-depends:       base >=4.6 && <4.8
+                     , parsec > 3
                      , directory
                      , filepath
                      , containers
