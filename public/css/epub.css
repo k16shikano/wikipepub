@@ -1,0 +1,23 @@
+﻿body{
+line-height:1.5;
+}
+
+table.wikitable{
+margin:1em 0;
+background-color:#f9f9f9;
+border:1px solid #aaa;
+border-collapse:collapse;
+color:black
+}
+
+table.wikitable > tr > th,table.wikitable > tr > td,table.wikitable > * > tr > th,table.wikitable > * > tr > td{
+border:1px solid #aaa;padding:0.2em 0.4em
+}
+
+table.wikitable > tr > th,table.wikitable > * > tr > th{
+background-color:#f2f2f2;text-align:center
+}
+
+table.wikitable > caption{
+font-weight:bold
+}
