@@ -45,7 +45,7 @@ getImageURL path = do
       resized = (join thumb) ++ "/300px-" ++ fn      
       extns   = FP.takeExtension original
       target  = if extns == ".svg" then original
-                else if (read width :: Int) < 300 then original 
+                else if (read width :: Int) <= 300 then original 
                      else resized
   
   return $ "https:"++target
