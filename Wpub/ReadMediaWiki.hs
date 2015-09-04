@@ -2,6 +2,7 @@ module Wpub.ReadMediaWiki where
 
 import Data.String.Utils
 import Data.List
+import Data.Char (toUpper)
 
 import Text.Parsec hiding (many, (<|>), Parser)
 import Control.Applicative hiding (optional)
@@ -359,12 +360,13 @@ image = do
       rest = dropWhile (\c -> (isFormat c) || (isResizing c)) options
       caption = if rest==[] then "" else head rest
   
-  let name = join "_" $ words $ concatText $ head s
+  let name' = join "_" $ words $ concatText $ head s
       thumb = "thumb" `elem` format || "thumbnail" `elem` format
       widthattr = case resizing of
         [] -> if thumb then mkattr "width" "222px" else mkattr "" []
         ("upright":_) -> if thumb then mkattr "width" "222px" else mkattr "" []
-        (px:_) -> mkattr "width" px 
+        (px:_) -> mkattr "width" px
+      name = (toUpper $ head name'):(tail name')
 
   liftIO $ getCommonsImage wikiurl name
   
