@@ -6,6 +6,9 @@ $(function($) {
         $('#waitmessage').click(function() {
             $.blockUI({ message: "Compiling EPUB..." });
         });
+        $('#downloaded').click(function() {
+            $(this).css('display', 'none');
+        });
     });
 
     setInterval(function () {
