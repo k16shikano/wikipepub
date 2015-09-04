@@ -1,0 +1,18 @@
+﻿<html>
+  <head>
+    <title>Read Wikipedia with EPUB</title>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+    <script type="text/javascript" src="http://malsup.github.io/jquery.blockUI.js"></script>
+    <script type="text/javascript" src="js/waitmessage.js"></script>
+  </head>
+  <body>
+    <h1>Read Wikipedia with EPUB</h1>
+    <form method="post" action="/wikipedia">
+      <textarea name="titles" rows="3"></textarea><br><br>
+      <button type="submit" id="waitmessage">Submit</button>
+    </form>
+    <div id="downloaded" style="display:none;"><a href="wikibook.epub">Download EPUB</a></div>
+  </body>
+</html>

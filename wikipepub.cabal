@@ -30,15 +30,15 @@ executable wikipepub
                      , MissingH
                      , zip-archive
                      , HTTP
+                     , http-types
                      , http-conduit
+                     , cookie
                      , transformers
                      , mtl
                      , hxt >= 9.3.1.15
                      , hxt-curl
                      , scotty >= 0.10.2
                      , text
-                     , blaze-html
-                     , blaze-markup
                      , wai-middleware-static
                      , time
   hs-source-dirs:      .
