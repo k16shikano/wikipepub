@@ -268,7 +268,7 @@ underline = htmltag "u"
 code = htmltag "code"
 tt = htmltag "tt"
 small = htmltag "small"
-math = htmltag "math"
+math = htmltag "span"
 sub = htmltag "sub"
 sup = htmltag "sup"
 
