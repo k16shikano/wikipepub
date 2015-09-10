@@ -18,8 +18,9 @@ import Text.XML.HXT.Core hiding ( xshow )
 import Wpub.WikipediaToHTML
 import QNDA.WriteEPUB
 
+import qualified Debug.Trace as DT (trace)
+
 main = do
-  removeDirectoryRecursive htmldir `E.catch` ignore
   let port= 3000
   
   scotty port $ do
