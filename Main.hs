@@ -5,6 +5,7 @@ import Web.Cookie
 import Network.Wai.Middleware.Static
 import Network.HTTP.Types
 import System.Directory (removeDirectoryRecursive)
+import System.IO.Temp
 
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
@@ -29,25 +30,28 @@ main = do
       file "public/index.html"
 
     post "/wikipedia" $ do
-      setHeader "Content-Type" "text/html"
-      setHeader "Set-Cookie" $ TL.pack "downloaded=yes"
-      
       parameter <- param "titles"
       let titles = take 3 $  -- limit entries
                    map TL.strip $ TL.lines parameter
-      liftIO $ mkEpub titles
+      epubid <- liftIO $ mkEpub titles
+      
+      setHeader "Content-Type" "text/html"
+      setHeader "Set-Cookie" $ TL.pack "downloaded=yes"
+      setHeader "Set-Cookie" $ TL.pack $ "epubid="++epubid
+            
       file "public/index.html"
-
---      setHeader "Content-Type" "application/epub+zip"
---      file "wikibook.epub"
 
 
 mkEpub titles = do
-  mapM (wikiToHtml . TL.unpack) titles
-  mkbookhtml titles
-  writeEPUB htmldir "book.html" "public/wikibook.epub"
+  withTempDirectory "public" "html." $ \htmldir -> do
+    removeDirectoryRecursive htmldir `E.catch` ignore
+    let epubid = drop 12 htmldir
+    mapM ((wikiToHtml $ htmldir++"/") . TL.unpack) titles
+    mkbookhtml htmldir titles
+    writeEPUB (htmldir++"/") "book.html" $ "public/wikibook-"++epubid++".epub"
+    return epubid
 
-mkbookhtml titles =
+mkbookhtml htmldir titles =
   runX (replaceChildren 
         (eelem "book" 
          += (eelem "bookinfo"
@@ -64,5 +68,5 @@ mkbookhtml titles =
          += (eelem "mainmatter")
          += (catA (map (\t -> eelem "include" += txt (TL.unpack t)) titles)))
         >>>
-        writeDocument [withOutputHTML] (htmldir++"book.html"))
+        writeDocument [withOutputHTML] (htmldir++"/book.html"))
   

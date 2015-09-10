@@ -1,6 +1,6 @@
 {-# LANGUAGE Arrows, FlexibleContexts #-}
 
-module Wpub.WikipediaToHTML (wikiToHtml, htmldir) where
+module Wpub.WikipediaToHTML (wikiToHtml) where
 
 import Text.XML.HXT.Core hiding ( xshow )
 import Text.XML.HXT.Curl
@@ -19,15 +19,15 @@ import Data.ByteString.Lazy.UTF8 ( fromString )
 import Wpub.ReadMediaWiki
 import Wpub.GetImage
 
-htmldir = "public/temp/"
+-- htmldir = "public/temp/"
 
-wikiToHtml :: String -> IO ()
-wikiToHtml s = do
+wikiToHtml :: FilePath -> String -> IO ()
+wikiToHtml htmldir s = do
   let url = "https://en.wikipedia.org/w/index.php?title=Special:Export&pages="++s++"&offset=1&limit=1&action=submit"
   
-  createDirectoryIfMissing True (htmldir++"images")
+  createDirectoryIfMissing True (htmldir++"/images")
   putStrLn url
-  runX (  
+  runX (
     readDocument [ withIndent yes
                  , withRemoveWS no
                  , withValidate no
@@ -40,12 +40,12 @@ wikiToHtml s = do
 {-      += (deepest (hasName "text" >>> getChildren))) >>> writeDocument [] ("page.html") -}
       += (deepest ( hasName "text" />
                     getText        >>>
-                    arrIO mediaWikiToHtml >>>
+                    arrIO (mediaWikiToHtml htmldir) >>>
                     arrL (\r -> case r of
                             Left err -> []
                             Right x -> x))))
     >>>
-    writeDocument [] (htmldir++s++".html")
+    writeDocument [] (htmldir++"/"++s++".html")
     )
   return ()
 

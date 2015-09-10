@@ -15,16 +15,18 @@ import Network.HTTP.Base (urlEncode)
 
 import Wpub.GetImage
 
-type Parser = ParsecT String () IO
-type GenParser tok st = ParsecT [tok] st IO
-type CharParser st = GenParser Char st
+data WST = WST {tempdir :: FilePath}
+type WParser = ParsecT String WST IO
+--type GenParser tok st = ParsecT [tok] st IO
+--type CharParser st = GenParser Char st
 
 wikiurl = "https://en.wikipedia.org/wiki/"
+wst = WST {tempdir="temp/"}
 
-mediaWikiToHtml :: String -> IO (Either ParseError [XmlTree])
-mediaWikiToHtml s = runParserT parseMediaWiki () "" s
+mediaWikiToHtml :: FilePath -> String -> IO (Either ParseError [XmlTree])
+mediaWikiToHtml dir s = runParserT parseMediaWiki wst{tempdir=dir++"/"} "" s
 
-parseMediaWiki :: Parser [XmlTree]
+parseMediaWiki :: WParser [XmlTree]
 parseMediaWiki =  manyTill block eof
 
 block = choice [ try header
@@ -39,7 +41,7 @@ block = choice [ try header
                , try otherblock
                ]
 
-header :: Parser XmlTree
+header :: WParser XmlTree
 header = do
   hc <- many1 $ string "=" 
   title <- many1 $ noneOf "="
@@ -48,14 +50,14 @@ header = do
   let h = "h" ++ (show $ length hc)
   return $ mkelem h [] [mkText title]
 
-para :: Parser XmlTree
+para :: WParser XmlTree
 para = do
   lookAhead $ noneOf "*#;:{|!"
   res <- many1 inline
   spaces
   return $ mkelem "p" [] res
 
-blockquote :: Parser XmlTree
+blockquote :: WParser XmlTree
 blockquote = do
   spaces
   string "<blockquote>"
@@ -63,7 +65,7 @@ blockquote = do
   spaces
   return $ mkelem "blockquote" [] res
 
-source :: Parser XmlTree
+source :: WParser XmlTree
 source = do
   spaces
   string "<source" >> spaces >> manyTill (noneOf "/>") (try $ string ">")
@@ -73,7 +75,7 @@ source = do
   spaces
   return $ mkelem "pre" [mkattr "class" "source"] res
 
-indentation :: Parser XmlTree
+indentation :: WParser XmlTree
 indentation = do
   many $ oneOf "*#"
   spaces
@@ -88,7 +90,7 @@ mklist kind whenSimple whenBlock = do
   spaces
   return $ mkelem kind [] lis
 
-itemize :: Parser [XmlTree] -> Parser XmlTree -> Parser XmlTree
+itemize :: WParser [XmlTree] -> WParser XmlTree -> WParser XmlTree
 itemize main sub = do
   main' <- main
   subblist'  <- sub
@@ -148,7 +150,7 @@ table = do
   spaces
   return $ mkelem "table" maybeattr tb
     
-anAttr :: Parser XmlTree
+anAttr :: WParser XmlTree
 anAttr = do
   n <- attrname
   spaces
@@ -161,7 +163,7 @@ attrname = manyTill alphaNum (lookAhead $ try $ oneOf "\n= ")
 attrvalue = choice [ try (char '"' *> manyTill (noneOf "\"\n|") (try (char '"')))
                    , many1 (noneOf " \n")]
 
-tableattribute :: Parser [XmlTree]
+tableattribute :: WParser [XmlTree]
 tableattribute = do
   spaces
   attrs <- sepEndBy1 anAttr (many (oneOf " \n"))
@@ -169,7 +171,7 @@ tableattribute = do
   spaces
   return $ attrs
 
-cellattribute :: Parser [XmlTree]
+cellattribute :: WParser [XmlTree]
 cellattribute = do
   spaces
   attrs <- sepEndBy1 anAttr (oneOf "\n ")
@@ -177,7 +179,7 @@ cellattribute = do
   spaces
   return $ attrs
 
-tr :: Parser XmlTree
+tr :: WParser XmlTree
 tr = mkelem "tr" [] <$> manyTill tcell (choice [try $ string "|-", try $ string "|}"]) <* spaces
 
 tcell = do  
@@ -197,14 +199,14 @@ tcell = do
   spaces
   return $ mkelem tx maybeattr cell
 
-otherblock :: Parser XmlTree
+otherblock :: WParser XmlTree
 otherblock = do 
   spaces
   many1 (noneOf "\n\r")
   spaces
   return $ mkText "\n\n"
   
-inline :: Parser XmlTree
+inline :: WParser XmlTree
 inline = choice [ mkText "" <$ try ((string "<!--") >> manyTill anyChar (try $ string "-->"))
                 , mkText "    " <$ try (char '\t')
                 , mkEntityRef "amp" <$ try (string "&")
@@ -237,28 +239,28 @@ inline = choice [ mkText "" <$ try ((string "<!--") >> manyTill anyChar (try $ s
                 , try inlineText
                 ]
 
-inlineText :: Parser XmlTree
+inlineText :: WParser XmlTree
 inlineText = mkText <$> many1 inlineChar
 
-inlineChar :: Parser Char
+inlineChar :: WParser Char
 inlineChar = satisfy $ \c ->
     not (c == '['  || c == ']' || c == '|' || c == '\'' || c == '<' ||
          c == '{'  || c == '}' || c == '!' || c == '&'  ||
          c == '\t' || c == '\n')
 
-emph :: Parser XmlTree
+emph :: WParser XmlTree
 emph = do
   string "'''''"
   t <- manyTill inline (try $ string "'''''")
   return $ mkelem "emph" [] t
 
-bold :: Parser XmlTree
+bold :: WParser XmlTree
 bold = do
   string "'''"
   t <- manyTill inline (try $ string "'''")
   return $ mkelem "b" [] t
 
-italic :: Parser XmlTree
+italic :: WParser XmlTree
 italic = do
   string "''"
   t <- manyTill inline (try $ string "''")
@@ -272,7 +274,7 @@ math = htmltag "span"
 sub = htmltag "sub"
 sup = htmltag "sup"
 
-htmltag :: String -> Parser XmlTree
+htmltag :: String -> WParser XmlTree
 htmltag s = do
   string ("<"++s) >> spaces >> manyTill (noneOf "/>") (string ">")
   t <- manyTill (choice [try inline, try (mkText "\n" <$ newline)
@@ -280,7 +282,7 @@ htmltag s = do
        (try $ string ("</"++s++">"))  
   return $ mkelem s [] t
 
-citation :: ParsecT String () IO a -> ParsecT String () IO a -> ([[XmlTree]] -> XmlTree) -> Parser XmlTree
+citation :: ParsecT String WST IO a -> ParsecT String WST IO a -> ([[XmlTree]] -> XmlTree) -> WParser XmlTree
 citation start end f = do
   refstart
   start >> spaces
@@ -299,16 +301,16 @@ citenews' = citation (string "{{Cite news") (string "}}") (\ts -> (mkelem "sup" 
 citebook  = citation (string "{{cite book") (string "}}") (\ts -> (mkelem "sup" [] [mkText "cite"]))
 citebook' = citation (string "{{Cite book") (string "}}") (\ts -> (mkelem "sup" [] [mkText "cite"]))
 
-ref :: Parser XmlTree
+ref :: WParser XmlTree
 ref = mkText "" <$ (string "<ref" >> spaces >> manyTill inlineChar (try $ string "/>") <* (skipMany (string " ")))
 
-refref :: Parser XmlTree
+refref :: WParser XmlTree
 refref = do
   string "<ref" >> spaces >> manyTill inlineChar (try (string ">"))>> spaces
   manyTill inline (try (string "</ref>"))  <* (skipMany (string " "))
   return $ mkText ""
 
-convert :: Parser XmlTree
+convert :: WParser XmlTree
 convert = do
   string "{{convert" 
   spaces
@@ -317,7 +319,7 @@ convert = do
   string "}}"
   return $ mkText (concatText v ++ concatText (head vs))
 
-ipac :: Parser XmlTree
+ipac :: WParser XmlTree
 ipac = do
   string "{{"
   choice [string "IPAc-en"]
@@ -327,7 +329,7 @@ ipac = do
   string "}}"
   return $ mkText $ concat (map concatText vs)
 
-respell :: Parser XmlTree
+respell :: WParser XmlTree
 respell = do
   string "{{Respell"
   spaces
@@ -336,7 +338,7 @@ respell = do
   string "}}"
   return $ mkText $ concat (map concatText vs)
 
-otherExt :: Parser XmlTree
+otherExt :: WParser XmlTree
 otherExt = do
   string "{{" 
   spaces
@@ -344,7 +346,7 @@ otherExt = do
   string "}}"
   return $ mkText ""
 
-image :: Parser XmlTree
+image :: WParser XmlTree
 image = do
   isInline <- choice [try (False <$ string "[[File:")
                      ,try (True  <$ string "[[Image:")
@@ -368,7 +370,8 @@ image = do
         (px:_) -> mkattr "width" px
       name = (toUpper $ head name'):(tail name')
 
-  liftIO $ getCommonsImage wikiurl name
+  wst <- getState
+  liftIO $ getCommonsImage (tempdir wst) wikiurl name
   
   let img = mkelem "img" [ mkattr "src" ("images/"++name)
                          , widthattr ] []
@@ -384,7 +387,7 @@ concatText xs = concat $
                         Nothing -> "")
                 xs
 
-link :: Parser XmlTree
+link :: WParser XmlTree
 link = do
   string "[["
   (t:ts) <- sepBy1 (many1 inline) $ try (string "|")
@@ -392,13 +395,13 @@ link = do
   let href = mkattr "href" $ concatText $ if ts==[] then t else (head ts)
   return $ mkelem "a" [href] t
 
-bracket :: Parser XmlTree
+bracket :: WParser XmlTree
 bracket = do
   string "["
   res <- manyTill inline (try $ string "]")
   return $ mkelem "span" [] res 
 
-curlybracket :: Parser XmlTree
+curlybracket :: WParser XmlTree
 curlybracket = do
   string "{" 
   res <- manyTill inline (try $ string "}")

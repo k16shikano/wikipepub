@@ -19,11 +19,11 @@ import Control.Monad.IO.Class
 
 import qualified Debug.Trace as DT (trace)
 
-imagedir = "public/temp/images/"
+--imagedir = "public/temp/images/"
 
-getCommonsImage :: String -> String -> IO ()
-getCommonsImage url name = do
-  let workdir = imagedir
+getCommonsImage :: FilePath -> String -> String -> IO ()
+getCommonsImage dir url name = do
+  let workdir = dir++"/images/"
       filename = workdir++name
   createDirectoryIfMissing True workdir
   dlImageIfNotExist (url++"File:"++(urlEncode name)) filename

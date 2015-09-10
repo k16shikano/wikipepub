@@ -21,6 +21,7 @@ executable wikipepub
                      , parsec > 3
                      , directory
                      , filepath
+                     , temporary
                      , containers
                      , process
                      , bytestring >= 0.9

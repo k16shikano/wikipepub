@@ -12,10 +12,15 @@ $(function($) {
     });
 
     setInterval(function () {
-        if ($.cookie("downloaded")) {
-            $.removeCookie("downloaded", { path: "/" });
+        if ($.cookie("epubid")) {
+            var epubid = $.cookie("epubid");
+            $('#epub').attr("href", "wikibook-"+epubid+".epub");
             $('#downloaded').css('display', 'block');
+            $.removeCookie("epubid", { path: "/"});
+        }
+        if ($.cookie("downloaded")) {
             $.unblockUI;
+            $.removeCookie("downloaded", { path: "/" });
         }
     }, 1000);
 })
