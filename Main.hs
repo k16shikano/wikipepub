@@ -21,7 +21,7 @@ import QNDA.WriteEPUB
 import qualified Debug.Trace as DT (trace)
 
 main = do
-  let port= 3000
+  let port= 80
   
   scotty port $ do
     middleware $ staticPolicy (noDots >-> addBase "public")
