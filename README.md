@@ -3,7 +3,7 @@ Read Wikipedia in EPUB
 
 ## demo
 
-http://ec2-52-88-44-146.us-west-2.compute.amazonaws.com/wikipedia
+http://golden-lucky.net:8080/wikipedia
 
 ## usage
 
