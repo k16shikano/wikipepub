@@ -54,8 +54,8 @@ mkHeaderCnt "appendix" n = ([chr $ 64+n], "appendix")
 mkHeaderCnt _ n    = ("", "other")
 
 h1Prefix :: HeaderCnt -> String
-h1Prefix (c, "chapter") = "第"++c++"章 "
-h1Prefix (c, "appendix") = "付録"++c++" "
+h1Prefix (c, "chapter") = "Chapter "++c
+h1Prefix (c, "appendix") = "Appendix "++c++" "
 h1Prefix (c, "other") = ""
 
 h2Prefix :: HeaderCnt -> Int -> String
