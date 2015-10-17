@@ -21,7 +21,7 @@ import QNDA.WriteEPUB
 import qualified Debug.Trace as DT (trace)
 
 main = do
-  let port= 80
+  let port= 3000
   
   scotty port $ do
     middleware $ staticPolicy (noDots >-> addBase "public")
@@ -70,4 +70,3 @@ mkbookhtml htmldir titles =
          += (catA (map (\t -> eelem "include" += txt (TL.unpack t)) titles)))
         >>>
         writeDocument [withOutputHTML] (htmldir++"/book.html"))
-  

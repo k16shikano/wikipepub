@@ -35,16 +35,14 @@ writeEPUB htmldir main out = do
   epochtime <- floor `fmap` getPOSIXTime  
   let mkEntry path content = ZIP.toEntry path epochtime content
   let cssfiles = ["public/css/epub.css"
-                 --, "public/css/fonts.css"
                  ]
   let cssdir = "public/css"
   let coverimg = "public/cover.jpg"
-  let coverfilename = "titlepage.xhtml"
+  let coverfilename = "public/titlepage.xhtml"
   let tocpagefile = "toc.xhtml"
   let okuzukepagefile = htmldir++"okuzuke.xhtml"
   let ncxfile = "toc.ncx"
   let auxfile = "book.aux" -- if you will
-  let fontsdir = "public/fonts"
   let outputFileName = out
   let book = htmldir++main
   
@@ -65,7 +63,7 @@ writeEPUB htmldir main out = do
     fromSLA (0,"frontmatter", "")
     (multi (ifA (hasName "include")
             (nextState . (\(filename, numOfh1) (n,x,_) -> (n+1, x, filename))
-                           $< ((getChildren >>> getText >>> arr ((htmldir++) . (++".html")))
+                           $< ((getChildren >>> getText >>> arr ((htmldir++) . (++".xhtml")))
                                &&& (listA (multi (hasName "h1")) >>> arr length)))
             (ifA (hasName "mainmatter")
              (constA (0, "chapter", "") >>> setState)
@@ -136,7 +134,6 @@ writeEPUB htmldir main out = do
   let mimetypeEntry = mkEntry "mimetype" $ fromString "application/epub+zip"
   
   stylesheetEntry <- ZIP.readEntry [ZIP.OptRecursive] cssdir
-  fontsEntry <- ZIP.readEntry [ZIP.OptRecursive] fontsdir
       
   container <- mkContainer
   let containerEntry = mkEntry "META-INF/container.xml" $ fromString . xshow $ container
@@ -146,7 +143,7 @@ writeEPUB htmldir main out = do
                                                                 coverfileEntry : coverimgEntry : tocpageEntry : okuzukeEntry : 
                                                                 (htmlEntries ++ imageEntries ++ mathImageEntries))
 
-  archive'' <- ZIP.addFilesToArchive [ZIP.OptRecursive] archive' [ fontsdir, cssdir ]
+  archive'' <- ZIP.addFilesToArchive [ZIP.OptRecursive] archive' [ cssdir ]
   
   -- ensure mimetype to be the first entry
   let archive = ZIP.addEntryToArchive mimetypeEntry archive''

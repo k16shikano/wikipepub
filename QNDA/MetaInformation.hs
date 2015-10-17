@@ -137,14 +137,6 @@ mkOpf metadata htmls htmlswithmath images mathimages (coverimg, coverfilename) t
       += (mkOpfHtmls htmls htmlswithmath)
       += (mkOpfImages images)
       += (mkOpfMathImages mathimages)
-      += (eelem "item"
-          += sattr "href" "fonts/Inconsolata.otf"
-          += sattr "id" "font1"
-          += sattr "media-type" "application/x-font-truetype")
-      += (eelem "item"
-          += sattr "href" "fonts/Inconsolatabold.otf"
-          += sattr "id" "font2"
-          += sattr "media-type" "application/x-font-truetype")
      )
   += (eelem "spine"
       += sattr "toc" "ncx"
@@ -199,7 +191,7 @@ mkOpfMetaData (title, (isbn, (rights, date))) authors =
   += (eelem "dc:rights"
       += txt rights)
   += (eelem "dc:publisher"
-      += txt "ohmsha")
+      += txt "golden-lucky")
   += catA (map (\((name,role),id) -> (eelem "dc:creator" 
                                       += (sattr "id" ("creator"++(show id)))
                                       += (constA name >>> getChildren))
@@ -243,7 +235,12 @@ mkOpfImages images = catA $
                      (zip3 images (mediaTypes images) [1..])
 
 mediaTypes :: [String] -> [String]
-mediaTypes images = map (\f -> ("image/"++(map C.toLower (tail (FP.takeExtension f))))) images
+mediaTypes images = map (mediatype . map C.toLower . tail . FP.takeExtension) images
+  where mediatype "png" = "image/png"
+        mediatype "jpg" = "image/jpeg"
+        mediatype "jpeg" = "image/jpeg"
+        mediatype "gif" = "image/gif"
+        mediatype x = "image/"++x
 
 mkOpfMathImages :: (ArrowXml a) => [String] -> a XmlTree XmlTree
 mkOpfMathImages images = catA $

@@ -125,11 +125,7 @@ mkTocpage headers = runX (
        += (eelem "link" 
            += sattr "rel" "stylesheet" 
            += sattr "type" "text/css"
-           += sattr "href" "css/epub.css")
-       += (eelem "link" 
-           += sattr "rel" "stylesheet" 
-           += sattr "type" "text/css"
-           += sattr "href" "css/fonts.css"))
+           += sattr "href" "public/css/epub.css"))
    += (eelem "body"
        += (eelem "nav" += sattr "xmlns:epub" "http://www.idpf.org/2007/ops" += sattr "epub:type" "toc"
            += (eelem "h1" += txt "Table of Contents")

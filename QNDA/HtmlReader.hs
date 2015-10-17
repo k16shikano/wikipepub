@@ -45,13 +45,8 @@ readHtml filename labels mathSnipets label n t = do
                    ] filename
       >>>
       processBottomUp (
-                
-        -- Inline elements        
-        (this >>> processAttrl ((setAttrName (mkName "id") >>> changeAttrValue idTrim) `when` hasAttr "name"
-                                <+>
-                                (setAttrName (mkName "href") >>> changeAttrValue idTrim) `when` hasAttr "href")) 
-        `when` hasName "a"
-        >>>
+        
+        -- Inline elements
         (mkExternalLink $< (this >>> getChildren)) `when` hasName "url"
         >>>
         (mkInternalLinkPage labels $< (getAttrValue "label")) `when` hasName "pageref"
@@ -83,11 +78,12 @@ readHtml filename labels mathSnipets label n t = do
         
         
         -- Block elements
-        (eelem "p" 
-         += sattr "class" "para" 
-         += (this >>> getChildren)
-         <+>
-         (ifA (this >>> hasAttr "label") (eelem "a" += (sattr "id" . idTrim $< getAttrValue "label")) (none)))
+        (ifA (getChildren >>> hasName "figure")
+         (eelem "div"
+          += (this >>> getChildren))
+         (eelem "p" 
+          += sattr "class" "para" 
+          += (this >>> getChildren)))
         `when` hasName "p"
         >>>
         (eelem "pre" 
@@ -154,11 +150,7 @@ readHtml filename labels mathSnipets label n t = do
                += (eelem "link" 
                    += sattr "rel" "stylesheet" 
                    += sattr "type" "text/css"
-                   += sattr "href" "css/epub.css")
-               += (eelem "link" 
-                   += sattr "rel" "stylesheet" 
-                   += sattr "type" "text/css"
-                   += sattr "href" "css/fonts.css")
+                   += sattr "href" "../css/epub.css")
                += (this /> hasName "title")
                += (eelem "meta" += sattr "charset" "utf-8"))
            += (deep 

@@ -37,7 +37,7 @@ wikiToHtml htmldir s = do
     processChildren (
       eelem "body"
       += getTitle
-{-      += (deepest (hasName "text" >>> getChildren))) >>> writeDocument [] ("page.html") -}
+{-      += (deepest (hasName "text" >>> getChildren))) >>> writeDocument [] ("page.html")-}
       += (deepest ( hasName "text" />
                     getText        >>>
                     arrIO (mediaWikiToHtml htmldir) >>>
@@ -45,11 +45,11 @@ wikiToHtml htmldir s = do
                             Left err -> []
                             Right x -> x))))
     >>>
-    writeDocument [] (htmldir++"/"++s++".html")
+    writeDocument [] (htmldir++"/"++s++".xhtml")
     )
   return ()
 
-getTitle = multi (hasName "page" />                      
+getTitle = multi (hasName "page" />
                   hasName "title" >>> setQName (mkName "h1"))
 
 ignore :: E.SomeException -> IO ()

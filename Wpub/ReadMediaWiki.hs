@@ -128,9 +128,9 @@ dlist = do
   spaces
   dt <- dtitle
   spaces
-  dd <- option (mkText "") (choice [try ddesc, try blist, try elist, try indentation, try para, try table, try source])
+  dd <- option [mkelem "dd" [] [mkText ""]] (many1 $ choice [try ddesc]) --, try blist, try elist, try indentation, try para, try table, try source])
   spaces
-  return $ mkelem "dl" [] ([dt]++[dd])
+  return $ mkelem "dl" [] ([dt]++dd)
 
 dtitle = mkelem "dt" [] <$> (string ";" >> spaces >> manyTill inline (try newline))
 ddesc = do  
@@ -392,8 +392,11 @@ link = do
   string "[["
   (t:ts) <- sepBy1 (many1 inline) $ try (string "|")
   string "]]"
-  let href = mkattr "href" $ concatText $ if ts==[] then t else (head ts)
-  return $ mkelem "a" [href] t
+  let inlineText = if ts==[] then t else head ts
+      href = mkattr "href" $ ("https://en.wikipedia.org/wiki/"++) $ join "_" $ words $ concatText t 
+  
+  return $ mkelem "a" [href] inlineText
+  
 
 bracket :: WParser XmlTree
 bracket = do
