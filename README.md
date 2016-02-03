@@ -3,7 +3,7 @@ Read Wikipedia in EPUB
 
 ## demo
 
-http://golden-lucky.net:8080/wikipedia
+`http://golden-lucky.net:8080/wikipedia` (currentlly not available)
 
 ## usage
 
