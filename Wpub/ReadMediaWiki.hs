@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Wpub.ReadMediaWiki where
 
 import Data.String.Utils

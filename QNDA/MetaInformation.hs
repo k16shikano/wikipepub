@@ -1,12 +1,11 @@
-﻿{-# LANGUAGE Arrows, FlexibleContexts #-}
+{-# LANGUAGE Arrows, FlexibleContexts #-}
 
 module QNDA.MetaInformation where
 
 import Text.XML.HXT.Core hiding (xshow)
 
 import Data.Time.Clock (getCurrentTime)
-import System.Locale (defaultTimeLocale)
-import Data.Time.Format (formatTime)
+import Data.Time.Format (formatTime, defaultTimeLocale)
 import qualified Data.Char as C (toLower)
 import qualified System.FilePath.Posix as FP
 

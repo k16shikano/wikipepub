@@ -17,7 +17,7 @@ executable wikipepub
   other-extensions:    FlexibleContexts
                      , OverloadedStrings
                      , Arrows
-  build-depends:       base >=4.6 && <4.8
+  build-depends:       base
                      , parsec > 3
                      , directory
                      , filepath

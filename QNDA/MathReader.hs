@@ -1,10 +1,10 @@
-﻿{-# LANGUAGE Arrows, FlexibleContexts #-}
+{-# LANGUAGE Arrows, FlexibleContexts #-}
 
 module QNDA.MathReader where
  
 import Text.XML.HXT.Core hiding (xshow)
 
-import qualified System.Cmd as Cmd (system)
+import qualified System.Process as Process (system)
 import qualified System.FilePath.Posix as FP
 import qualified System.Process as Prc (readProcess)
 
@@ -51,7 +51,12 @@ latexTemplate body = "\\documentclass[landscape]{jsbook}\n"
 
 genImageFromEqString imagepath equation = do
   IO.writeFile "temp" (latexTemplate equation)
-  Cmd.system $ "./mkMathImg.sh " ++ imagepath
+  Process.system $ 
+       "uplatex temp > /dev/null ;"
+    ++ "dvipdfmx -q -f lucida -l temp.dvi ;" -- > /dev/null;"
+    ++ "convert -strip -trim -density 200 +repage temp.pdf "
+    ++ imagepath
+  Process.system "rm -fr temp*"
 
 mathElem :: (ArrowXml a, ArrowIO a) => FilePath -> a XmlTree XmlTree
 mathElem filename =
